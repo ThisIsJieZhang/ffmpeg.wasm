@@ -9,6 +9,8 @@ export enum FFMessageType {
   EXEC = "EXEC",
   WRITE_FILE = "WRITE_FILE",
   READ_FILE = "READ_FILE",
+  MOUNT = "MOUNT",
+  UNMOUT = "UNMOUNT",
   DELETE_FILE = "DELETE_FILE",
   RENAME = "RENAME",
   CREATE_DIR = "CREATE_DIR",

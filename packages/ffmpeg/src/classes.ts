@@ -55,6 +55,8 @@ export class FFmpeg {
           case FFMessageType.EXEC:
           case FFMessageType.WRITE_FILE:
           case FFMessageType.READ_FILE:
+          case FFMessageType.MOUNT:
+          case FFMessageType.UNMOUT:
           case FFMessageType.DELETE_FILE:
           case FFMessageType.RENAME:
           case FFMessageType.CREATE_DIR:
@@ -253,6 +255,31 @@ export class FFmpeg {
       {
         type: FFMessageType.WRITE_FILE,
         data: { path, data },
+      },
+      trans
+    ) as Promise<OK>;
+  };
+
+  public mountWorkerFS = (path: string, data: FileData): Promise<OK> => {
+    const trans: Transferable[] = [];
+    if (data instanceof Uint8Array) {
+      trans.push(data.buffer);
+    }
+    return this.#send(
+      {
+        type: FFMessageType.MOUNT,
+        data: { path, data },
+      },
+      trans
+    ) as Promise<OK>;
+  };
+
+  public unmountWorkerFS = (path: string): Promise<OK> => {
+    const trans: Transferable[] = [];
+    return this.#send(
+      {
+        type: FFMessageType.UNMOUT,
+        data: { path },
       },
       trans
     ) as Promise<OK>;

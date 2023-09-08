@@ -40,6 +40,7 @@ CONF_FLAGS=(
   -sEXPORTED_FUNCTIONS=$(node src/bind/ffmpeg/export.js) # exported functions
   -sEXPORTED_RUNTIME_METHODS=$(node src/bind/ffmpeg/export-runtime.js) # exported built-in functions
   --pre-js src/bind/ffmpeg/bind.js        # extra bindings, contains most of the ffmpeg.wasm javascript code
+  -lworkerfs.js
   # ffmpeg source code
   src/fftools/cmdutils.c 
   src/fftools/ffmpeg.c 

@@ -9,6 +9,8 @@ import type {
   FFMessageExecData,
   FFMessageWriteFileData,
   FFMessageReadFileData,
+  FFMessageMountFileData,
+  FFMessageUnMountFileData,
   FFMessageDeleteFileData,
   FFMessageRenameData,
   FFMessageCreateDirData,
@@ -103,6 +105,17 @@ const writeFile = ({ path, data }: FFMessageWriteFileData): OK => {
 const readFile = ({ path, encoding }: FFMessageReadFileData): FileData =>
   ffmpeg.FS.readFile(path, { encoding });
 
+const mountWorkerFS = ({ path, data }: FFMessageMountFileData): OK => {
+  ffmpeg.FS.mkdir(path);
+  ffmpeg.FS.mount(ffmpeg.FS.filesystems.WORKERFS, { files: data }, path);
+  return true;
+};
+
+const unmountWorkerFS = ({ path}: FFMessageUnMountFileData): OK => {
+  ffmpeg.FS.unmount(path);
+  return true;
+};
+  
 // TODO: check if deletion works.
 const deleteFile = ({ path }: FFMessageDeleteFileData): OK => {
   ffmpeg.FS.unlink(path);
@@ -157,6 +170,12 @@ self.onmessage = async ({
         break;
       case FFMessageType.READ_FILE:
         data = readFile(_data as FFMessageReadFileData);
+        break;
+      case FFMessageType.MOUNT:
+        data = mountWorkerFS(_data as FFMessageMountFileData);
+        break;
+      case FFMessageType.UNMOUT:
+        data = unmountWorkerFS(_data as FFMessageUnMountFileData);
         break;
       case FFMessageType.DELETE_FILE:
         data = deleteFile(_data as FFMessageDeleteFileData);

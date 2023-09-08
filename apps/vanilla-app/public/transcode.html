@@ -8,6 +8,9 @@
     <h3>Upload a video to transcode to mp4 (x264) and play!</h3>
     <video id="output-video" controls></video><br/>
     <input type="file" id="uploader">
+    </br>
+    <button id="trans">开始转换本地文件</button>
+    </br>
     <p id="message"></p>
     <script>
       const { fetchFile } = FFmpegUtil;
@@ -28,20 +31,131 @@
             coreURL: "/assets/core/package/dist/umd/ffmpeg-core.js",
           });
         }
-        const { name } = files[0];
-        await ffmpeg.writeFile(name, await fetchFile(files[0]));
+        const WOKRKING_PATH = "/working";
+        let name = WOKRKING_PATH + "/" + files[0].name;
+        console.log("start write file now:" + files[0] + "  ,files:" + files);
+        await ffmpeg.mountWorkerFS(WOKRKING_PATH, files);
+        // await ffmpeg.writeFile(WOKRKING_PATH, files);
+        console.log("end write file now:" + files[0]);
+
+
+        // const { name } = files[0];
+        // await ffmpeg.writeFile(name, await fetchFile(files[0]));
         message.innerHTML = 'Start transcoding';
-        console.time('exec');
-        await ffmpeg.exec(['-i', name,  'output.mp4']);
-        console.timeEnd('exec');
+        // await ffmpeg.exec(['-i', name,  'output.mp4']);
+        await ffmpeg.exec(['-i', name, '-vn', '-codec:a', 'copy', "output.aac"])
         message.innerHTML = 'Complete transcoding';
-        const data = await ffmpeg.readFile('output.mp4');
+        await ffmpeg.unmountWorkerFS(WOKRKING_PATH);
+        // const data = await ffmpeg.readFile('output.mp4');
+        const data = await ffmpeg.readFile('output.aac');
 
         const video = document.getElementById('output-video');
-        video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+        // video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+        video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'audio/mpeg' }));
       }
       const elm = document.getElementById('uploader');
       elm.addEventListener('change', transcode);
+
+      async function transcodeVideoToAAC(file, name) {
+        const message = document.getElementById('message');
+        if (ffmpeg === null) {
+          ffmpeg = new FFmpeg();
+          ffmpeg.on("log", ({ message }) => {
+            console.log(message);
+          });
+          ffmpeg.on("progress", ({ progress }) => {
+            message.innerHTML = `${progress * 100} %`;
+          });
+          await ffmpeg.load({
+            coreURL: "/assets/core/package/dist/esm/ffmpeg-core.js",
+          });
+        }
+      
+        name = "/working/" + name;
+        console.log("transcodeVideoToAAC file:" + file + "  name:" + name);
+        console.log("start write file now:" + file);
+        
+        // const files = fileToFileList(file)
+        // console.log("put in files:" + files);
+        const files = [file];
+        await ffmpeg.writeFile(name, files);
+        console.log("end write file:" + name + " ,files:" + files);
+
+        message.innerHTML = 'Start transcoding';
+        await ffmpeg.exec(['-i', name, '-vn', '-codec:a', 'copy', 'output.aac']);
+        message.innerHTML = 'Complete transcoding';
+
+        const data = await ffmpeg.readFile('output.aac');
+        const video = document.getElementById('output-video');
+        video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'audio/mpeg' }));
+      }
+      
+      function urlToFile(url, filename) {
+        return fetch(url)
+          .then((response) => {
+            console.log("urlToFile fetch file response:", response);
+            return response.body;
+          })
+          .then((body) => {
+            return new Response(body).blob();
+          })
+          .then((blob) => {
+            return new File([blob], filename, { type: "video/mp4" });
+          })
+      }
+
+      const transcodeWithLocalServer = async (files) => {
+        const name = "trans_data.mp4"
+        urlToFile(files[0], name)
+        .then(file => {
+            transcodeVideoToAAC(file, name);
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      }
+
+
+
+      // 获取当前页面的URL
+      var url = window.location.href;
+      console.log("跳转 url:" + url);
+      // 解析URL并获取参数对象
+      var params = new URLSearchParams(window.location.search);
+      // alert("params:" + params);
+      // 获取单个参数的值
+      const paramsJson = params.get('params');
+      const paramsObj = JSON.parse(paramsJson);
+      const inputFileUrls = paramsObj['inFileUrls'];
+      const outFileUrl = paramsObj['outFileUrl'];
+      const stopSessionUrl = paramsObj['stopSessionUrl'];
+      const reqId = paramsObj['reqId'];
+
+      if (inputFileUrls.length > 0) {
+        const inputPath = inputFileUrls[0];
+        message.innerHTML = '待处理文件：' + inputPath;
+        // appendNewContent('待处理文件：' + inputPath);
+        console.log('待处理文件：' + inputPath);
+
+        const video = document.getElementById('output-video');
+        video.src = inputPath;
+
+      } else {
+        console.log('没有待处理文件：');
+      }
+
+      function onTransClick() {
+        console.log('onTransClick :' + inputFileUrls);
+        if (inputFileUrls.length > 0) {
+
+          transcodeWithLocalServer(inputFileUrls)
+
+        }
+        // else {
+        //   appendNewContent("没有传入文件url参数，无法进行音频提取");
+        // }
+      }
+      document.getElementById('trans').addEventListener('click', onTransClick);
     </script>
   </body>
 </html>

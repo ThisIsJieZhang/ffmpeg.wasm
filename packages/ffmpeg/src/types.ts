@@ -39,6 +39,15 @@ export interface FFMessageReadFileData {
   encoding: string;
 }
 
+export interface FFMessageMountFileData {
+  path: FFFSPath;
+  data: FileData;
+}
+
+export interface FFMessageUnMountFileData {
+  path: FFFSPath;
+}
+
 export interface FFMessageDeleteFileData {
   path: FFFSPath;
 }

@@ -46,11 +46,14 @@ export interface Stat {
  * @category File System
  */
 export interface FS {
+  filesystems;
   mkdir: (path: string) => void;
   rmdir: (path: string) => void;
   rename: (oldPath: string, newPath: string) => void;
   writeFile: (path: string, data: Uint8Array | string) => void;
   readFile: (path: string, opts: OptionReadFile) => Uint8Array | string;
+  mount: (type: string, opts: OptionReadFile, mountpoint: string) => void;
+  unmount: (mountpoint: string) => void;
   readdir: (path: string) => string[];
   unlink: (path: string) => void;
   stat: (path: string) => Stat;
